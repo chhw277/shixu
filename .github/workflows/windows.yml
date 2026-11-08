@@ -1,0 +1,81 @@
+name: Windows app
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      TZ: Asia/Shanghai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Test domain model and real Windows filesystem
+        run: npm test
+      - name: Build Windows x64 app
+        run: npm run package:windows
+      - name: Test packaged Windows app
+        shell: pwsh
+        run: |
+          $env:SHIXU_SMOKE_EXECUTABLE = (Resolve-Path 'artifacts/拾序-win32-x64/Shixu.exe').Path
+          $env:SHIXU_SMOKE_REPORT = 'artifacts/windows-smoke.json'
+          npm run test:desktop
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          $compiler = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $compiler)) { throw 'Inno Setup compiler missing from Windows runner' }
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          & $compiler "/DAppVersion=$version" scripts/windows-installer.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Test installation, restart and uninstall
+        run: node scripts/windows-installer-smoke.mjs
+      - name: Create portable ZIP and checksums
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $zip = "artifacts/Shixu-$version-Windows-x64.zip"
+          Compress-Archive -Path 'artifacts/拾序-win32-x64' -DestinationPath $zip
+          $names = @($zip, "artifacts/Shixu-$version-Windows-x64-Setup.exe")
+          $lines = foreach ($name in $names) {
+            $hash = (Get-FileHash -Algorithm SHA256 $name).Hash.ToLowerInvariant()
+            "$hash  $([IO.Path]::GetFileName($name))"
+          }
+          $lines | Set-Content -Encoding utf8 artifacts/SHA256SUMS-Windows.txt
+      - name: Save downloadable Windows apps
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shixu-Windows-x64
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            artifacts/Shixu-*-Windows-x64.zip
+            artifacts/Shixu-*-Windows-x64-Setup.exe
+            artifacts/SHA256SUMS-Windows.txt
+      - name: Save validation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-validation
+          retention-days: 14
+          path: |
+            artifacts/*smoke.json
+            artifacts/package-integrity-win32-x64.json
+            artifacts/desktop-*.png
