@@ -16,7 +16,7 @@ export async function verifyPackage(bundle, expectedVersion) {
   const files = [];
   for (const entry of [...await walk('dist'), ...await walk('src'), ...await walk('electron'), 'THIRD_PARTY_NOTICES.txt']) {
     const source = await readFile(path.join(root, entry));
-    const packaged = extractFile(archive, entry);
+    const packaged = extractFile(archive, entry.split('/').join(path.sep));
     const matches = source.equals(packaged);
     files.push({ path: entry, sha256: createHash('sha256').update(source).digest('hex'), matches });
     if (!matches) throw new Error(`Package differs from source: ${entry}`);
