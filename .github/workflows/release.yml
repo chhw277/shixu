@@ -1,0 +1,82 @@
+name: Publish tested desktop release
+
+on:
+  workflow_dispatch:
+    inputs:
+      windows_run_id:
+        description: Successful Windows app workflow run ID
+        required: true
+        type: string
+      release_tag:
+        description: Release tag matching the tested package version
+        required: true
+        default: v1.1.1
+        type: string
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      WINDOWS_RUN_ID: ${{ inputs.windows_run_id }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Require a successful Windows build
+        id: tested
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run view "$WINDOWS_RUN_ID" --repo "$GH_REPO" --json conclusion,headSha,workflowName > "$RUNNER_TEMP/tested-run.json"
+          node -e 'const r=require(process.argv[1]);if(r.conclusion!=="success"||r.workflowName!=="Windows app")process.exit(1);console.log("sha="+r.headSha)' "$RUNNER_TEMP/tested-run.json" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tested.outputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Verify release version
+        run: node -e 'if("v"+require("./package.json").version!==process.env.RELEASE_TAG)process.exit(1)'
+      - run: npm ci
+      - name: Build macOS Apple Silicon app
+        run: npm run package:mac
+      - name: Create macOS archive
+        run: |
+          mkdir -p release
+          VERSION=$(node -p 'require("./package.json").version')
+          ditto -c -k --sequesterRsrc --keepParent 'artifacts/拾序-darwin-arm64/拾序.app' "release/Shixu-$VERSION-macOS-arm64.zip"
+      - name: Retrieve tested Windows apps
+        uses: actions/download-artifact@v4
+        with:
+          name: Shixu-Windows-x64
+          path: release
+          run-id: ${{ inputs.windows_run_id }}
+          github-token: ${{ github.token }}
+      - name: Verify Windows checksums
+        working-directory: release
+        run: shasum -a 256 -c SHA256SUMS-Windows.txt
+      - name: Create combined checksums
+        working-directory: release
+        run: shasum -a 256 Shixu-*.zip Shixu-*.exe > SHA256SUMS.txt
+      - name: Attach files and publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target '${{ steps.tested.outputs.sha }}' --draft --title "拾序 ${RELEASE_TAG#v} · Windows 与 macOS" --notes-file "docs/releases/$RELEASE_TAG.md"
+          fi
+          gh release upload "$RELEASE_TAG" release/*.zip release/*.exe release/SHA256SUMS.txt --repo "$GH_REPO" --clobber
+          gh release edit "$RELEASE_TAG" --repo "$GH_REPO" --draft=false --latest
+      - name: Save macOS package validation
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macOS-package-validation
+          retention-days: 14
+          path: artifacts/package-integrity-darwin-arm64.json

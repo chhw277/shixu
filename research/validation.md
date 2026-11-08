@@ -1,5 +1,19 @@
 # 验证记录
 
+## 1.1.1 Windows 增补（当前）
+
+Windows 10/11 x64 安装版和免安装版在 [原生 Windows 构建机](https://github.com/chhw277/shixu/actions/runs/42459853855) 上验证通过，源提交 `c34a9639147a1e7ab7399c4823a4baa39c2f357d`。
+
+- 38 项领域与真实 Windows 文件存储测试通过。
+- 完整打包后的 ASAR 与源文件逐一校验一致，验证 Windows 路径分隔符兼容。
+- Windows EXE 实际启动、IPC 隔离、本地磁盘保存、退出重启、快速输入、Ctrl K 命令、偏好恢复、导入导出、拒绝坏数据、废纸篓清空保持，通过。
+- Inno Setup 安装程序编译通过，在包含中文和空格的独立临时路径安装、完整运行同一 smoke、卸载成功；卸载后用户任务文件保留。
+- macOS 1.1.1 在本机通过 16 项界面测试及打包后完整 Electron smoke，界面错误 0。
+
+证据保留于该工作流的 `Windows-validation` 附件和本机 `artifacts/windows-validation/`。安装包随私有仓库的 Release 提供。当前仍为本地版，没有声称云同步、安卓或客户端自动升级已完成。
+
+## 1.1.0 历史验收
+
 验证日期：2026-11-08（Asia/Shanghai）。均使用新建样例或隔离临时目录，没有写入原版滴答清单数据。
 
 | 项目 | 结果 | 证据 |
