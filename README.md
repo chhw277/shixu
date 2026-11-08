@@ -1,7 +1,5 @@
 # 拾序
 
-参考本机滴答清单（TickTick 8.2.41）信息结构实现的独立本地任务应用。通过 REA 对安装包、Mach-O、界面资源进行取证，使用 Things / Linear 的成熟交互设计作参考，采用 Radix Slate + Indigo 配色。
-
 ## 下载安装（v1.1.1）
 
 安装包已上传至 [GitHub Releases](https://github.com/chhw277/shixu/releases/tag/v1.1.1)，点击下表直接下载：
