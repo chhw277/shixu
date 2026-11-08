@@ -60,7 +60,9 @@ jobs:
           github-token: ${{ github.token }}
       - name: Verify Windows checksums
         working-directory: release
-        run: shasum -a 256 -c SHA256SUMS-Windows.txt
+        run: |
+          tr -d '\r' < SHA256SUMS-Windows.txt > SHA256SUMS-Windows-normalized.txt
+          shasum -a 256 -c SHA256SUMS-Windows-normalized.txt
       - name: Create combined checksums
         working-directory: release
         run: shasum -a 256 Shixu-*.zip Shixu-*.exe > SHA256SUMS.txt
