@@ -35,7 +35,7 @@ test('both directions: real content reveal, duplicate-click guard, complete clea
 
 for(const viewport of [{width:1380,height:880},{width:768,height:1024},{width:390,height:844}])test(`snapshot alignment, scrolled containers, fixed/sticky and form state ${viewport.width}`,async({page})=>{
  await page.setViewportSize(viewport);await ready(page);
- await page.getByRole('button',{name:'收起详情',exact:true}).click();
+ await page.getByRole('button',{name:'关闭任务详情',exact:true}).click();
  await page.getByRole('textbox',{name:'快速添加任务'}).fill('尚未提交的输入 #保留');
  await page.evaluate(()=>{
   const scroller=document.querySelector('.main-body');
@@ -57,7 +57,7 @@ for(const viewport of [{width:1380,height:880},{width:768,height:1024},{width:39
 });
 
 test('window resize, scrolling and typing interrupt safely, commit target and allow later interaction',async({page})=>{
- await ready(page);await page.getByRole('button',{name:'收起详情',exact:true}).click();await freezeAnimation(page);
+ await ready(page);await page.getByRole('button',{name:'关闭任务详情',exact:true}).click();await freezeAnimation(page);
  for(const action of [()=>page.setViewportSize({width:1100,height:720}),()=>page.evaluate(()=>document.querySelector('.main-body').dispatchEvent(new Event('scroll'))),()=>page.getByRole('textbox',{name:'快速添加任务'}).fill('中断仍能输入')]){
   const from=await page.locator('html').getAttribute('data-theme');
   await page.getByRole('button',{name:'切换主题',exact:true}).click();await step(page,900);await expect(layer(page)).toHaveCount(1);await action();await assertNoLeaks(page);await expect(page.locator('html')).toHaveAttribute('data-theme',from==='light'?'dark':'light');
@@ -90,7 +90,7 @@ test('sound settings persist, real AudioContext is gesture-only and sources stop
  });
  await ready(page);expect(await page.evaluate(()=>window.audioAudit.contexts)).toBe(0);await settings(page);
  await expect(page.getByRole('checkbox',{name:'开启主题音效'})).not.toBeChecked();await page.getByRole('checkbox',{name:'开启主题音效'}).check();
- await page.getByRole('slider',{name:'主题音效音量'}).fill('42');await page.getByRole('button',{name:'关闭弹窗',exact:true}).click();
+ const volume=page.getByRole('slider',{name:'主题音效音量'});await volume.press('Home');for(let i=0;i<42;i++)await volume.press('ArrowRight');await page.getByRole('button',{name:'关闭弹窗',exact:true}).click();
  await page.getByRole('button',{name:'切换主题',exact:true}).click();await expect.poll(()=>page.evaluate(()=>window.audioAudit.live)).toBeGreaterThan(0);
  await page.waitForTimeout(950);expect(await page.evaluate(()=>window.audioAudit.contexts)).toBe(1);
  await page.evaluate(()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));});
