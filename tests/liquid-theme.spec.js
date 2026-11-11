@@ -111,7 +111,7 @@ test('scoped SVG ids retain local references, clone has no delegated handlers or
  await page.evaluate(()=>{const span=document.createElement('span');span.innerHTML='<svg width="12" height="12"><defs><linearGradient id="fixture-gradient"><stop stop-color="red"/></linearGradient></defs><rect width="12" height="12" fill="url(#fixture-gradient)"/></svg>';document.querySelector('.topbar').append(span);});
  await page.getByRole('button',{name:'切换主题',exact:true}).click();
  expect(await page.evaluate(()=>{
-  const layer=document.querySelector('.liquid-reveal'),rect=layer.querySelector('rect'),id=rect.getAttribute('fill').match(/#([^)]*)/)[1];
+  const layer=document.querySelector('.liquid-reveal'),rect=layer.querySelector('rect[fill^="url("]'),id=rect.getAttribute('fill').match(/#([^)]*)/)[1];
   return !!layer.querySelector(`[id="${id}"]`)&&id!=='fixture-gradient'&&[...layer.querySelectorAll('button,input,select,textarea,a,[tabindex]')].every(el=>el.tabIndex<0);
  })).toBe(true);
  await step(page,2900);await assertNoLeaks(page);

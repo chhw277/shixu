@@ -9,7 +9,7 @@ function Harness(){
  const [theme,setTheme]=useState<'light'|'dark'>('light');fixture.fixtureSetTheme=setTheme;
  return <main style={{height:'100%',background:'var(--panel)',color:'var(--text)'}}>
   <LiquidThemeToggle theme={theme} onThemeChange={next=>{events.push(['commit',next]);setTheme(next);}}
-   root={()=>document.getElementById('root')} sound={{begin(){events.push('begin');},update(){},stop(reason){events.push(['stop',reason]);}}/>
+   root={()=>document.getElementById('root')} sound={{begin(){events.push('begin');},update(){},stop(reason){events.push(['stop',reason]);}}}/>
   <h1>Lifecycle fixture</h1><input defaultValue="preserve me"/>
  </main>;
 }

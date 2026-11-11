@@ -49,11 +49,19 @@ export function useLiquidTheme(options: LiquidThemeOptions) {
     };
     listen(window,'resize',interrupt);listen(window,'orientationchange',interrupt);
     if(window.visualViewport){listen(window.visualViewport,'resize',interrupt);listen(window.visualViewport,'scroll',interrupt);}
-    listen(document,'scroll',interrupt,{capture:true,passive:true});
+    // Restoring the inert copy's scroll offsets queues native scroll events.
+    // Only movement of the real page should interrupt the reveal.
+    listen(document,'scroll',event=>{
+      if(event.target instanceof Element&&event.target.closest('.liquid-reveal'))return;
+      interrupt();
+    },{capture:true,passive:true});
     listen(document,'visibilitychange',()=>{if(document.hidden)interrupt();});
     listen(window,'pagehide',interrupt);
     listen(document,'pointerdown',pointer,{capture:true});
-    listen(document,'input',interrupt,{capture:true});listen(document,'change',interrupt,{capture:true});
+    // Let React record a native input/change event before committing a theme update.
+    // Committing from document capture can reset a controlled field before onChange runs.
+    const afterInput=()=>queueMicrotask(interrupt);
+    listen(document,'input',afterInput,{capture:true});listen(document,'change',afterInput,{capture:true});
     listen(document,'keydown',(event)=>{const e=event as KeyboardEvent;if(e.target instanceof Element&&e.target.closest('[data-theme-toggle]')&&['Enter',' '].includes(e.key))return;if(!['Shift','Control','Alt','Meta'].includes(e.key))interrupt();},{capture:true});
     const motion=matchMedia('(prefers-reduced-motion: reduce)');listen(motion,'change',interrupt);
     safe(()=>sound?.begin(target,false));
