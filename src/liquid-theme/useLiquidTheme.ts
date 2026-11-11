@@ -32,10 +32,11 @@ export function useLiquidTheme(options: LiquidThemeOptions) {
     clip.id=id;clip.setAttribute('clipPathUnits','userSpaceOnUse');path.setAttribute('d','M0 0Z');clip.append(path);defs.append(clip);svg.append(defs);
     if(snapshot){document.body.append(svg);snapshot.layer.style.clipPath=`url("#${id}")`;}
     let frame=0,ended=false;
+    let inputInterrupt:ReturnType<typeof setTimeout>|undefined;
     const listeners:Array<()=>void>=[];
     const listen=(target:EventTarget,type:string,handler:EventListener,options?:AddEventListenerOptions)=>{target.addEventListener(type,handler,options);listeners.push(()=>target.removeEventListener(type,handler,options));};
     const end=(reason:StopReason)=>{
-      if(ended)return;ended=true;cancelAnimationFrame(frame);listeners.forEach(off=>off());
+      if(ended)return;ended=true;cancelAnimationFrame(frame);if(inputInterrupt!==undefined)clearTimeout(inputInterrupt);listeners.forEach(off=>off());
       // Commit synchronously under the fully revealed copy, before removing it.
       try{if(!preview&&reason!=='unmount')commit();}
       finally{snapshot?.dispose();svg.remove();run.current=null;safe(()=>sound?.stop(reason));}
@@ -60,7 +61,7 @@ export function useLiquidTheme(options: LiquidThemeOptions) {
     listen(document,'pointerdown',pointer,{capture:true});
     // Let React record a native input/change event before committing a theme update.
     // Committing from document capture can reset a controlled field before onChange runs.
-    const afterInput=()=>queueMicrotask(interrupt);
+    const afterInput=()=>{if(inputInterrupt!==undefined)clearTimeout(inputInterrupt);inputInterrupt=setTimeout(interrupt,0);};
     listen(document,'input',afterInput,{capture:true});listen(document,'change',afterInput,{capture:true});
     listen(document,'keydown',(event)=>{const e=event as KeyboardEvent;if(e.target instanceof Element&&e.target.closest('[data-theme-toggle]')&&['Enter',' '].includes(e.key))return;if(!['Shift','Control','Alt','Meta'].includes(e.key))interrupt();},{capture:true});
     const motion=matchMedia('(prefers-reduced-motion: reduce)');listen(motion,'change',interrupt);
