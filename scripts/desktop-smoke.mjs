@@ -12,6 +12,15 @@ async function launch(){
 }
 let {app,page}=await launch();
 await expect.poll(()=>page.evaluate(()=>!!window.desktop)).toBe(true);
+await page.getByRole('button',{name:'切换主题',exact:true}).click();
+await expect(page.locator('html')).toHaveAttribute('data-theme','dark');
+await page.getByRole('button',{name:'切换主题',exact:true}).click();
+await expect(page.locator('html')).toHaveAttribute('data-theme','light');
+await page.getByRole('textbox',{name:'快速添加任务'}).focus();
+const focusStyle=await page.getByRole('textbox',{name:'快速添加任务'}).evaluate(el=>getComputedStyle(el).outlineStyle);
+expect(focusStyle).toBe('none');
+await expect(page.locator('.sound-toggle')).toHaveCount(0);
+
 await page.getByRole('textbox',{name:'快速添加任务'}).fill('桌面重启验证');await page.getByRole('textbox',{name:'快速添加任务'}).press('Enter');
 await page.locator('.task-content').filter({hasText:'桌面重启验证'}).click();
 await page.getByRole('textbox',{name:'任务备注'}).fill('Electron IPC + atomic disk persistence verified');
@@ -76,6 +85,6 @@ await expect(page.getByRole('button',{name:'清空废纸篓',exact:true})).toBeD
 await page.screenshot({path:'artifacts/desktop-empty-trash.png'});
 await app.close();
 if(errors.length)throw Error(errors.join('\n'));
-const report=JSON.stringify({platform:process.platform,result:'passed',dataPath,taskSurvivesRestart:true,quickCaptureAndCommands:true,exportImportRoundTrip:true,invalidImportRejected:true,emptyTrashSurvivesRestart:true,workspaceSurvivesRestart:true,rendererErrors:errors,security},null,2);
+const report=JSON.stringify({platform:process.platform,result:'passed',dataPath,taskSurvivesRestart:true,liquidThemeBothDirections:true,quickInputSingleFocusRing:true,soundSettingsOnly:true,quickCaptureAndCommands:true,exportImportRoundTrip:true,invalidImportRejected:true,emptyTrashSurvivesRestart:true,workspaceSurvivesRestart:true,rendererErrors:errors,security},null,2);
 await writeFile(process.env.SHIXU_SMOKE_REPORT||'artifacts/desktop-smoke.json',report+'\n');
 console.log(report);

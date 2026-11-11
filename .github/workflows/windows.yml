@@ -26,8 +26,14 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Check reusable theme module types
+        run: npm run typecheck
+      - name: Test liquid geometry and local audio synthesis
+        run: npm run test:liquid
       - name: Test domain model and real Windows filesystem
         run: npm test
+      - name: Test browser UI, liquid reveal and responsive layouts
+        run: npm run test:ui
       - name: Build Windows x64 app
         run: npm run package:windows
       - name: Test packaged Windows app
@@ -79,3 +85,5 @@ jobs:
             artifacts/*smoke.json
             artifacts/package-integrity-win32-x64.json
             artifacts/desktop-*.png
+            artifacts/liquid-*.png
+            artifacts/playwright/**

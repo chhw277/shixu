@@ -10,7 +10,7 @@ on:
       release_tag:
         description: Release tag matching the tested package version
         required: true
-        default: v1.1.1
+        default: v1.1.2
         type: string
 
 permissions:
@@ -44,8 +44,15 @@ jobs:
       - name: Verify release version
         run: node -e 'if("v"+require("./package.json").version!==process.env.RELEASE_TAG)process.exit(1)'
       - run: npm ci
+      - name: Check types and model/audio tests
+        run: npm run typecheck && npm test && npm run test:liquid
       - name: Build macOS Apple Silicon app
         run: npm run package:mac
+      - name: Test packaged macOS app
+        env:
+          SHIXU_SMOKE_EXECUTABLE: ${{ github.workspace }}/artifacts/拾序-darwin-arm64/拾序.app/Contents/MacOS/拾序
+          SHIXU_SMOKE_REPORT: artifacts/macos-smoke.json
+        run: npm run test:desktop
       - name: Create macOS archive
         run: |
           mkdir -p release
@@ -81,4 +88,7 @@ jobs:
         with:
           name: macOS-package-validation
           retention-days: 14
-          path: artifacts/package-integrity-darwin-arm64.json
+          path: |
+            artifacts/package-integrity-darwin-arm64.json
+            artifacts/macos-smoke.json
+            artifacts/desktop-*.png

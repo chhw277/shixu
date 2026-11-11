@@ -1,7 +1,7 @@
 {
   "name": "shixu-local",
   "productName": "拾序",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -14,7 +14,11 @@
     "package": "npm run build && node scripts/package.mjs",
     "package:windows": "npm run build && node scripts/package.mjs win32 x64",
     "package:mac": "npm run build && node scripts/package.mjs darwin arm64",
-    "test:desktop": "node scripts/desktop-smoke.mjs"
+    "test:desktop": "node scripts/desktop-smoke.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test:liquid": "node --test tests/liquid-audio.test.mjs",
+    "test:liquid-ui": "playwright test tests/liquid-theme.spec.js",
+    "audio:preview": "node scripts/render-liquid-audio.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -24,8 +28,12 @@
   "devDependencies": {
     "@electron/packager": "^20.3.0",
     "@playwright/test": "^1.56.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "electron": "^45.2.3",
-    "vite": "^7.2.0"
+    "typescript": "^7.0.2",
+    "vite": "^7.2.0",
+    "web-audio-engine": "^0.13.4"
   },
   "overrides": {
     "glob": "^14.0.2",

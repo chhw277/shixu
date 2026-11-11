@@ -1,27 +1,27 @@
 # 拾序
 
-## 下载安装（v1.1.1）
+## 下载安装（v1.1.2）
 
-安装包已上传至 [GitHub Releases](https://github.com/chhw277/shixu/releases/tag/v1.1.1)，点击下表直接下载：
+安装包已上传至 [GitHub Releases](https://github.com/chhw277/shixu/releases/tag/v1.1.2)，点击下表直接下载：
 
 | 系统 | 安装包 | 使用方法 |
 |---|---|---|
-| Windows 10/11，64 位 | [Windows 安装版（EXE）](https://github.com/chhw277/shixu/releases/download/v1.1.1/Shixu-1.1.1-Windows-x64-Setup.exe) | 下载后运行安装程序 |
-| Windows 10/11，64 位 | [Windows 免安装版（ZIP）](https://github.com/chhw277/shixu/releases/download/v1.1.1/Shixu-1.1.1-Windows-x64.zip) | 完整解压后运行 `Shixu.exe`，保留同目录所有文件 |
-| macOS 13+，Apple Silicon | [macOS 应用（ZIP）](https://github.com/chhw277/shixu/releases/download/v1.1.1/Shixu-1.1.1-macOS-arm64.zip) | 解压后将拾序.app 放入“应用程序”并打开 |
+| Windows 10/11，64 位 | [Windows 安装版（EXE）](https://github.com/chhw277/shixu/releases/download/v1.1.2/Shixu-1.1.2-Windows-x64-Setup.exe) | 下载后运行安装程序 |
+| Windows 10/11，64 位 | [Windows 免安装版（ZIP）](https://github.com/chhw277/shixu/releases/download/v1.1.2/Shixu-1.1.2-Windows-x64.zip) | 完整解压后运行 `Shixu.exe`，保留同目录所有文件 |
+| macOS 13+，Apple Silicon | [macOS 应用（ZIP）](https://github.com/chhw277/shixu/releases/download/v1.1.2/Shixu-1.1.2-macOS-arm64.zip) | 解压后将拾序.app 放入“应用程序”并打开 |
 
-[下载 SHA-256 校验文件](https://github.com/chhw277/shixu/releases/download/v1.1.1/SHA256SUMS.txt)。仓库目前为私有，下载需登录有仓库访问权限的 GitHub 账号；也可以将下载好的安装包直接发送给其他使用者。
+[下载 SHA-256 校验文件](https://github.com/chhw277/shixu/releases/download/v1.1.2/SHA256SUMS.txt)。仓库目前为私有，下载需登录有仓库访问权限的 GitHub 账号；也可以将下载好的安装包直接发送给其他使用者。
 
 ## 直接打开
 
-- **Windows 10/11 x64**：从 [Releases](https://github.com/chhw277/shixu/releases) 下载 `Shixu-1.1.1-Windows-x64-Setup.exe` 安装；也可完整解压同版本 Windows ZIP，双击其中的 `Shixu.exe`。免安装版必须保留同目录下的运行时与 resources 文件。
-- **macOS 13+ Apple Silicon**：下载 `Shixu-1.1.1-macOS-arm64.zip`，解压后打开拾序.app。本地构建路径为 `artifacts/拾序-darwin-arm64/拾序.app`。
+- **Windows 10/11 x64**：从 [Releases](https://github.com/chhw277/shixu/releases) 下载 `Shixu-1.1.2-Windows-x64-Setup.exe` 安装；也可完整解压同版本 Windows ZIP，双击其中的 `Shixu.exe`。免安装版必须保留同目录下的运行时与 resources 文件。
+- **macOS 13+ Apple Silicon**：下载 `Shixu-1.1.2-macOS-arm64.zip`，解压后打开拾序.app。本地构建路径为 `artifacts/拾序-darwin-arm64/拾序.app`。
 
 界面和运行时已包含在应用内，不需要 Node 或网络。Windows 未购买代码签名证书；macOS 使用本机临时签名，未做 Apple 开发者公证。首次启动带有示例任务，可直接编辑或删除。原版滴答清单的账户、数据库和任务没有被导入或修改。仓库为私有时，Release 下载也需要仓库访问权限。
 
 **当前为本地版。Supabase 云同步、独立账号、安卓 App 和客户端自动更新仍待实现。** GitHub Actions 自动构建新版安装包，与已安装 App 自动升级是两件事。
 
-## Windows 1.1.1
+## Windows 1.1.2
 
 Windows 使用系统标题栏，快捷键中的 ⌘ 对应 Ctrl，例如 Ctrl K 搜索、Ctrl N 新建、Ctrl 点击多选。提供当前用户安装程序，不要求管理员权限；卸载程序保留个人任务数据。通过 Windows 构建机验证真实启动、退出重启、磁盘读写、导入导出、安装和卸载。下载文件的 SHA-256 见同一 Release 的 `SHA256SUMS.txt`。
 
@@ -89,7 +89,7 @@ npm run package:mac      # 显式构建 macOS arm64
 
 `SHIXU_TEST_DATA_DIR` 用于指定隔离数据目录。`SHIXU_SMOKE_EXECUTABLE` 可让 smoke 脚本验证打包后的可执行文件。不要把测试数据路径指向日常使用目录。UI 测试配置使用本机已安装的 Google Chrome，不下载浏览器。
 
-推送 main 后，GitHub Actions 在 Windows 上执行 `npm ci`、38 项领域/存储测试、Windows 打包、真实 Electron smoke、Inno Setup 安装包生成及安装/卸载 smoke，并提供安装程序、免安装 ZIP 和验证报告。安装包与依赖不直接提交到 Git；本机逆向原始资源、个人数据、凭证与运行报告也不上传。
+推送 main 后，GitHub Actions 在 Windows 上执行类型检查、38 项领域/存储测试、9 项音效/几何/首屏测试、26 项浏览器界面用例、Windows 打包、真实 Electron smoke、Inno Setup 安装包生成及安装/卸载 smoke，并提供安装程序、免安装 ZIP 和验证报告。Mac 发布任务另行验证相同源码、打包程序与文件完整性。安装包与依赖不直接提交到 Git；本机逆向原始资源、个人数据、凭证与运行报告也不上传。
 
 ## 设计来源
 
@@ -99,3 +99,11 @@ npm run package:mac      # 显式构建 macOS arm64
 - [Todoist](https://www.todoist.com/)：成熟任务产品的信息组织。
 
 设计系统依赖色值来源及原文存档在 `research/sources/`。UI 采用自绘图标与 Lucide；没有将原版图片、图标或代码打入交付应用。源码依赖及许可证由各项目持有。
+
+## 1.1.2 液体主题与焦点修复
+
+顶部月亮/太阳按钮、设置主题选择和命令面板均接入双向液体主题切换。音效默认关闭，在 **设置 → 切换音效** 开启、调音量或试听；顶部不放声音按钮。快速添加任务栏已去掉内部重复蓝框，保留外侧焦点提示。主题偏好、任务与备份继续使用原数据模型；声音偏好单独保存在设备本地。
+
+运行 `npm run dev` 打开 http://127.0.0.1:5173/ 。新增模块类型检查 `npm run typecheck`，音效/几何测试 `npm run test:liquid`，浏览器验收 `npm run test:liquid-ui`。离线音效试听可用 `npm run audio:preview` 从相同的音效代码重新生成。
+
+详细的组件接口、完整调用例子、对齐及中断策略和快照支持范围见 [接入说明](docs/liquid-theme.md)，本次已执行/尚未完成的检查见 [验收记录](docs/liquid-validation.md)。发布内容与历次修复见 [更新日志](CHANGELOG.md)。
