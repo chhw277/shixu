@@ -10,7 +10,7 @@ on:
       release_tag:
         description: Release tag matching the tested package version
         required: true
-        default: v1.1.2
+        default: v1.1.3
         type: string
 
 permissions:
@@ -53,6 +53,11 @@ jobs:
           SHIXU_SMOKE_EXECUTABLE: ${{ github.workspace }}/artifacts/拾序-darwin-arm64/拾序.app/Contents/MacOS/拾序
           SHIXU_SMOKE_REPORT: artifacts/macos-smoke.json
         run: npm run test:desktop
+      - name: Test legacy data, memos and focus preservation in packaged macOS app
+        env:
+          SHIXU_SMOKE_EXECUTABLE: ${{ github.workspace }}/artifacts/拾序-darwin-arm64/拾序.app/Contents/MacOS/拾序
+          SHIXU_SMOKE_REPORT: artifacts/macos-repair-smoke.json
+        run: node scripts/repair-desktop-smoke.mjs
       - name: Create macOS archive
         run: |
           mkdir -p release
@@ -91,4 +96,5 @@ jobs:
           path: |
             artifacts/package-integrity-darwin-arm64.json
             artifacts/macos-smoke.json
+            artifacts/macos-repair-smoke.json
             artifacts/desktop-*.png

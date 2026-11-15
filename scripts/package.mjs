@@ -15,7 +15,7 @@ await access(path.join(root, 'dist/index.html'));
 const icon = path.join(root, 'build', platform === 'darwin' ? 'shixu.icns' : 'shixu.ico');
 await access(icon);
 const result = await packager({
-  dir: root, out: path.join(root, 'artifacts'), name: '拾序',
+  dir: root, out: process.env.SHIXU_PACKAGE_OUT ? path.resolve(process.env.SHIXU_PACKAGE_OUT) : path.join(root, 'artifacts'), name: '拾序',
   executableName: platform === 'win32' ? 'Shixu' : '拾序',
   appBundleId: 'local.shixu.desktop', appCategoryType: 'public.app-category.productivity',
   platform, arch, asar: true, overwrite: true, prune: true,

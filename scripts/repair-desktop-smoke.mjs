@@ -1,0 +1,65 @@
+import {_electron as electron,expect} from '@playwright/test';
+import assert from 'node:assert/strict';
+import {mkdtemp,mkdir,readFile,writeFile} from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {createInitialState} from '../src/model.js';
+
+const directory=await mkdtemp(path.join(os.tmpdir(),'shixu-repair-'));
+const fixture=process.env.SHIXU_COMPAT_FIXTURE?JSON.parse(await readFile(process.env.SHIXU_COMPAT_FIXTURE,'utf8')):createInitialState();
+if(!process.env.SHIXU_COMPAT_FIXTURE)delete fixture.memos;
+await mkdir(path.join(directory,'data'),{recursive:true});
+await writeFile(path.join(directory,'data/state.json'),JSON.stringify(fixture));
+const errors=[];let app,page,dataPath;
+const nav=name=>page.getByRole('button',{name,exact:true}).click();
+async function launch(){
+ app=await electron.launch({...(process.env.SHIXU_SMOKE_EXECUTABLE?{executablePath:process.env.SHIXU_SMOKE_EXECUTABLE,args:[]}:{args:['.']}),env:{...process.env,SHIXU_DEV:'0',SHIXU_TEST_DATA_DIR:directory},timeout:30000});
+ page=await app.firstWindow();page.on('pageerror',e=>errors.push(e.message));
+ await expect(page.locator('.main-area h1')).toBeVisible();
+ await app.evaluate(({Notification})=>{Notification.isSupported=()=>false;});
+ dataPath=await page.evaluate(()=>window.desktop.dataPath());
+ assert.equal(dataPath,path.join(directory,'data/state.json'));
+ await expect(page.getByText('所有更改已保存在本机',{exact:true})).toBeVisible();
+}
+const load=async()=>JSON.parse(await readFile(dataPath,'utf8'));
+try{
+ await launch();
+ const migrated=await load();assert.deepEqual(migrated,{...fixture,memos:fixture.memos||[]});
+ await nav('备忘录');await nav('新建备忘录');
+ await page.getByRole('textbox',{name:'备忘录内容'}).fill('隔离桌面备忘录\n重启和备份验收');
+ await expect.poll(async()=>(await load()).memos.at(-1)?.content).toBe('隔离桌面备忘录\n重启和备份验收');
+ await app.close();app=null;
+ await launch();await expect(page.locator('.main-area h1')).toHaveText('备忘录');
+ await expect(page.locator('.memo-content').filter({hasText:'隔离桌面备忘录'})).toBeVisible();
+ const roundtrip=await load(),backupPath=path.join(directory,'export.json');
+ await app.evaluate(({dialog},file)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:file});dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},backupPath);
+ assert.equal(await page.evaluate(async()=>window.desktop.exportData(await window.desktop.load())),true);
+ assert.deepEqual(JSON.parse(await readFile(backupPath,'utf8')),roundtrip);
+ assert.deepEqual(await page.evaluate(()=>window.desktop.importData()),roundtrip);
+ await writeFile(backupPath,JSON.stringify(fixture));
+ assert.deepEqual(await page.evaluate(()=>window.desktop.importData()),migrated);
+ await nav('设置');page.once('dialog',dialog=>dialog.accept());await nav('恢复备份');
+ await expect.poll(load).toEqual(migrated);await nav('关闭弹窗');
+ await writeFile(backupPath,JSON.stringify({...roundtrip,memos:null}));
+ assert.equal(await page.evaluate(async()=>{try{await window.desktop.importData();return false;}catch{return true;}}),true);
+ assert.deepEqual(await load(),migrated);
+ await nav('所有任务');
+ await page.getByRole('textbox',{name:'快速添加任务'}).fill('隔离快速专注验收');await page.getByRole('textbox',{name:'快速添加任务'}).press('Enter');
+ const row=page.locator('.main-area .task-row').filter({has:page.locator('.task-title',{hasText:'隔离快速专注验收'})});
+ await row.hover();await nav('开始专注 隔离快速专注验收');
+ await expect(page.locator('.main-area h1')).toHaveText('专注');
+ const timer=await page.evaluate(()=>JSON.parse(localStorage.getItem('shixu-timer')));
+ assert.equal(timer.kind,'focus');assert.ok(timer.endAt>Date.now());
+ await nav('暂停');const paused=await page.evaluate(()=>JSON.parse(localStorage.getItem('shixu-timer')));
+ await nav('所有任务');await row.hover();await nav('开始专注 隔离快速专注验收');
+ assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('shixu-timer'))),paused);
+ await app.close();app=null;
+ await launch();assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('shixu-timer'))),paused);
+ const final=await load();for(const key of ['lists','habits','focusSessions','settings'])assert.deepEqual(final[key],fixture[key]);
+ for(const original of fixture.tasks)assert.deepEqual(final.tasks.find(t=>t.id===original.id),original);
+ await app.close();app=null;assert.deepEqual(errors,[]);
+ const report={result:'passed',platform:process.platform,executable:process.env.SHIXU_SMOKE_EXECUTABLE||'source Electron',isolatedDataPath:dataPath,fixtureSha256:createHash('sha256').update(JSON.stringify(fixture)).digest('hex'),originalCounts:Object.fromEntries(['tasks','lists','habits','focusSessions'].map(k=>[k,fixture[k].length])),legacyStartup:true,originalEntitiesPreserved:true,memoSavedBeforeBlur:true,memoSurvivesRestart:true,memoExportImport:true,oldBackupImport:true,invalidMemoImportRejected:true,pausedFocusPreserved:true,pausedTimerSurvivesRestart:true,rendererErrors:errors};
+ await writeFile(process.env.SHIXU_SMOKE_REPORT||'artifacts/repair-2026-11-15/repair-desktop-smoke.json',JSON.stringify(report,null,2)+'\n');
+ console.log(JSON.stringify(report,null,2));
+}finally{if(app)await app.close().catch(()=>{});}

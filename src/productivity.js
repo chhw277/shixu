@@ -45,7 +45,7 @@ export function readWorkspace(storage) {
   try{
     const value=JSON.parse(storage.getItem(WORKSPACE_KEY));
     if(!value||value.version!==1)return null;
-    const view=typeof value.view==='string'&&value.view.length<=200&&( ['today','upcoming','inbox','all','completed','trash','calendar','matrix','focus','habits'].includes(value.view)||/^(list|tag):.+/.test(value.view))?value.view:'today';
+    const view=typeof value.view==='string'&&value.view.length<=200&&( ['today','upcoming','inbox','all','completed','trash','calendar','matrix','focus','habits','memos'].includes(value.view)||/^(list|tag):.+/.test(value.view))?value.view:'today';
     return {view,selected:typeof value.selected==='string'?value.selected:null,mode:['list','board'].includes(value.mode)?value.mode:'list',sort:['default','priority','date','created'].includes(value.sort)?value.sort:'default',detailOpen:typeof value.detailOpen==='boolean'?value.detailOpen:true,showCompleted:value.showCompleted===true,scrolls:value.scrolls&&typeof value.scrolls==='object'?Object.fromEntries(Object.entries(value.scrolls).filter(([k,v])=>k.length<=200&&Number.isFinite(v)&&v>=0&&v<10000000)): {}};
   }catch{return null;}
 }

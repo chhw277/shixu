@@ -43,6 +43,13 @@ jobs:
           $env:SHIXU_SMOKE_REPORT = 'artifacts/windows-smoke.json'
           npm run test:desktop
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Test legacy data, memos and focus preservation in packaged Windows app
+        shell: pwsh
+        run: |
+          $env:SHIXU_SMOKE_EXECUTABLE = (Resolve-Path 'artifacts/拾序-win32-x64/Shixu.exe').Path
+          $env:SHIXU_SMOKE_REPORT = 'artifacts/windows-repair-smoke.json'
+          node scripts/repair-desktop-smoke.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Compile installer
         shell: pwsh
         run: |

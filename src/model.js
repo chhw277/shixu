@@ -1,7 +1,7 @@
 /** Offline task domain. Dates use calendar arithmetic, never UTC date slicing. */
 const TASK_KEYS = ['id','title','notes','listId','due','priority','important','repeat','completed','completedAt','createdAt','tags','subtasks','deleted','reminder'];
 const REPEATS = ['none','daily','weekly','monthly'];
-const LIMITS = { tasks: 20000, lists: 200, habits: 200, focusSessions: 20000 };
+const LIMITS = { tasks: 20000, lists: 200, habits: 200, focusSessions: 20000, memos: 5000 };
 const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
 const fail = message => { throw new Error(message); };
 const object = (value, label) => {
@@ -70,7 +70,10 @@ export function nextOccurrence(value, repeat) {
 }
 
 export function validateState(input) {
-  fields(input, ['version','tasks','lists','habits','focusSessions','settings'], '数据');
+  object(input, '数据');
+  // Migrate old version 1 backups without mutating the input or hiding invalid memos.
+  if (input.version === 1 && !own(input, 'memos')) input = {...input, memos: []};
+  fields(input, ['version','tasks','lists','habits','focusSessions','memos','settings'], '数据');
   if (input.version !== 1) fail('不支持的数据版本');
   for (const [key, limit] of Object.entries(LIMITS)) {
     if (!Array.isArray(input[key]) || input[key].length > limit) fail(`${key} 数量无效，最多 ${limit} 条`);
@@ -111,6 +114,10 @@ export function validateState(input) {
     if (session.taskId !== null && !taskIds.has(session.taskId)) fail('专注记录引用了不存在的任务');
     number(session.minutes,'专注分钟',0.01,1440); instant(session.endedAt,'专注结束时间');
   }
+  for (const memo of input.memos) {
+    fields(memo,['id','content','createdAt'],'备忘录'); identifier(memo.id,'备忘录');
+    string(memo.content,'备忘录内容',50000,true); instant(memo.createdAt,'创建时间');
+  }
   fields(input.settings,['theme','accent','focusMinutes','breakMinutes'],'设置');
   enumeration(input.settings.theme,['light','dark','system'],'主题');
   enumeration(input.settings.accent,['blue','green','violet','amber','rose'],'强调色');
@@ -137,7 +144,7 @@ export function createInitialState(now = new Date()) {
     {id:'tomorrow',title:'准备下周的产品讨论',listId:'work',due:tomorrow,priority:2,important:true,tags:['工作']},
     {id:'done-demo',title:'清理桌面，泡一杯热茶',listId:'life',due:today,completed:true,completedAt:createdAt},
   ].map(task=>baseTask({createdAt,...task}));
-  return validateState({version:1,tasks,lists:[{id:'work',name:'工作项目',color:'#5B7CFA'},{id:'life',name:'日常生活',color:'#49A58F'},{id:'reading',name:'阅读与成长',color:'#B48AD7'}],habits:[{id:'water',name:'认真喝水',color:'#5B8DEF',target:8,unit:'杯',history:{[today]:3}},{id:'reading',name:'每天阅读',color:'#AF8CC5',target:1,unit:'次',history:{}},{id:'exercise',name:'活动一下',color:'#64A88D',target:1,unit:'次',history:{}},{id:'sleep',name:'早一点休息',color:'#D4A05E',target:1,unit:'次',history:{}}],focusSessions:[],settings:{theme:'light',accent:'blue',focusMinutes:25,breakMinutes:5}});
+  return validateState({version:1,tasks,lists:[{id:'work',name:'工作项目',color:'#5B7CFA'},{id:'life',name:'日常生活',color:'#49A58F'},{id:'reading',name:'阅读与成长',color:'#B48AD7'}],habits:[{id:'water',name:'认真喝水',color:'#5B8DEF',target:8,unit:'杯',history:{[today]:3}},{id:'reading',name:'每天阅读',color:'#AF8CC5',target:1,unit:'次',history:{}},{id:'exercise',name:'活动一下',color:'#64A88D',target:1,unit:'次',history:{}},{id:'sleep',name:'早一点休息',color:'#D4A05E',target:1,unit:'次',history:{}}],focusSessions:[],memos:[],settings:{theme:'light',accent:'blue',focusMinutes:25,breakMinutes:5}});
 }
 
 function patchObject(original, patch, allowed, label) {
@@ -232,6 +239,9 @@ function reduceAction(state, action) {
       next={...state,habits:state.habits.map(item=>item.id===action.id?{...item,history:{...item.history,[action.date]:value}}:item)};break;
     }
     case 'HABIT_DELETE': requireItem(state.habits,action.id,'习惯');next={...state,habits:state.habits.filter(habit=>habit.id!==action.id)};break;
+    case 'MEMO_ADD': next={...state,memos:[...state.memos,{id:uid(),content:'',createdAt:new Date().toISOString(),...action.memo}]};break;
+    case 'MEMO_UPDATE': requireItem(state.memos,action.id,'备忘录');next={...state,memos:state.memos.map(memo=>memo.id===action.id?patchObject(memo,action.patch,['content'],'备忘录更新'):memo)};break;
+    case 'MEMO_DELETE': requireItem(state.memos,action.id,'备忘录');next={...state,memos:state.memos.filter(memo=>memo.id!==action.id)};break;
     case 'FOCUS_ADD': {
       if(action.session?.id && state.focusSessions.some(session=>session.id===action.session.id)) return state;
       next={...state,focusSessions:[...state.focusSessions,{id:uid(),taskId:null,minutes:25,endedAt:new Date().toISOString(),...action.session}]};break;
